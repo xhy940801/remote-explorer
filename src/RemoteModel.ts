@@ -39,4 +39,8 @@ export class RemoteModel {
     public getContent(filePath: string) : Thenable<string> {
         return Promise.resolve(fs.readFileSync(path.join('E:\\', filePath)).toString());
     }
+
+    public setContent(filePath: string, data: Buffer, callback) : void {
+        fs.writeFile(path.join('E:\\', filePath), data, callback)
+    }
 }

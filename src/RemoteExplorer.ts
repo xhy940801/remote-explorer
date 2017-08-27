@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
 import { RemoteNode } from './RemoteNode'
-import { RemoteModel } from './RemoteModel'
+import { defaultRemoteModel } from './Context'
 
 
 export class RemoteExplorer implements vscode.TreeDataProvider<RemoteNode> {
-    private _remoteModel : RemoteModel = new RemoteModel()
+    private _remoteModel = defaultRemoteModel
 
     getTreeItem(element: RemoteNode): vscode.TreeItem {
         let resourcePath = path.join(__filename, '..', '..', '..', 'resources')
@@ -14,7 +14,7 @@ export class RemoteExplorer implements vscode.TreeDataProvider<RemoteNode> {
             collapsibleState: element.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
             command: element.isDirectory ? void 0 : {
                 command: 'remoteExplorer.openResource',
-                arguments: [ element.path ],
+                arguments: [ element ],
                 title: 'Open Remote Resourse',
             },
             iconPath: {
