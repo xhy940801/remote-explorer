@@ -27,8 +27,35 @@
             {
                 "command": "remoteExplorer.openResource",
                 "title": "Open Remote Resource"
+            },
+            {
+                "command": "remoteExplorer.setAsRoot",
+                "title": "Set As Root"
+            },
+            {
+                "command": "remoteExplorer.resetRoot",
+                "title": "Reset Root",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
             }
-        ]
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "remoteExplorer.resetRoot",
+                    "when": "view == remoteExplorer",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "remoteExplorer.setAsRoot",
+                    "when": "view == remoteExplorer && viewItem == directory"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
