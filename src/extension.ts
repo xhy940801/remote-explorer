@@ -24,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('remoteExplorer.openResource', (node: RemoteNode) => {
         Context.defaultContext.remoteModel.getContent(node.path).then((content) => {
             let localPath = Context.defaultContext.fileMapping.getAbsolutePath(Context.defaultContext.fileMapping.getLink(node.path))
+            Context.defaultContext.fileMapping.setFileMTime(node.path, node.stat.mtime.getTime())
             fs.writeFileSync(localPath, content)
             vscode.window.showTextDocument(vscode.Uri.file(localPath))
         })
@@ -36,16 +37,32 @@ export function activate(context: vscode.ExtensionContext) {
         Context.defaultContext.cache.set('tmp', 'remoteBasePath', '')
         remoteExplorer.refresh()
     })
+    vscode.commands.registerCommand('remoteExplorer.setParentAsRoot', () => {
+        let basePath = Context.defaultContext.cache.get('tmp', 'remoteBasePath')
+        if (!basePath) {
+            vscode.window.showErrorMessage('go to parent folder failed. current path is base path')
+        } else {
+            Context.defaultContext.cache.set('tmp', 'remoteBasePath', path.posix.dirname(basePath))
+            remoteExplorer.refresh()
+        }
+    })
     vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
         utils.flushDocument(Context.defaultContext.fileMapping, Context.defaultContext.remoteModel, doc)
     })
     vscode.workspace.onWillSaveTextDocument((e: vscode.TextDocumentWillSaveEvent) => {
         let remotePath = Context.defaultContext.fileMapping.getReverseLink(Context.defaultContext.fileMapping.getRelativePath(e.document.uri.fsPath))
-        Context.defaultContext.remoteModel.setContent(remotePath, new Buffer(e.document.getText()), (err) => {
-            if (err)
-                vscode.window.showErrorMessage('save remote file "' + remotePath + '" failed.');
-            else
-                vscode.window.showInformationMessage('save remote file "' + remotePath + '" success.');
+        Context.defaultContext.remoteModel.getStats(remotePath)
+        .then(stats => {
+            if (stats.mtime.getTime() != Context.defaultContext.fileMapping.getFileMTime(remotePath)) {
+                throw new SyntaxError('file of server has beed modified')
+            }
+        })
+        .then(() => Context.defaultContext.remoteModel.setContent(remotePath, new Buffer(e.document.getText())))
+        .then(c => {
+            utils.flushDocument(Context.defaultContext.fileMapping, Context.defaultContext.remoteModel, e.document)
+        }, e => {
+            vscode.window.showErrorMessage('save remote file "' + remotePath + '" failed because of ' + e)
+            throw new SyntaxError(e)
         })
     })
     for (let doc of vscode.workspace.textDocuments) {

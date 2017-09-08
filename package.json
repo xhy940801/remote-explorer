@@ -39,12 +39,25 @@
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
                 }
+            },
+            {
+                "command": "remoteExplorer.setParentAsRoot",
+                "title": "Set Parent As Root",
+                "icon": {
+                    "light": "resources/light/dotdotdot.svg",
+                    "dark": "resources/dark/dotdotdot.svg"
+                }
             }
         ],
         "menus": {
             "view/title": [
                 {
                     "command": "remoteExplorer.resetRoot",
+                    "when": "view == remoteExplorer",
+                    "group": "navigation"
+                },
+                {
+                    "command": "remoteExplorer.setParentAsRoot",
                     "when": "view == remoteExplorer",
                     "group": "navigation"
                 }

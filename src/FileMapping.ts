@@ -67,7 +67,7 @@ export class FileMapping {
         }
     }
 
-    public getLink(src : string) : string {
+    public getLink(src: string) : string {
         let dst = this._cache.get('tmp.file.map', src)
         if (dst) {
             return dst
@@ -85,6 +85,15 @@ export class FileMapping {
             }
             this.createNewTempFolder()
         }
+    }
+
+    public setFileMTime(src: string, mtime: Number) : void {
+        this._cache.set('tmp.file.info', src, mtime)
+        this._cache.flush()
+    }
+
+    public getFileMTime(src: string) : Number {
+        return this._cache.get('tmp.file.info', src)
     }
 
     public getReverseLink(src: string) : string {

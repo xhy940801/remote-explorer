@@ -1,6 +1,7 @@
 import * as ssh from 'ssh2'
+import { Stats } from 'fs'
 import { posix as path } from 'path'
-import { RemoteNode } from './RemoteNode'
+import { RemoteNode, RemoteNodeStat } from './RemoteNode'
 import { Config } from './Config'
 import { Cache } from './Cache'
 
@@ -17,6 +18,10 @@ export class RemoteModel {
         this._sshConfig = sshConfig
         this._config = config
         this._cache = cache
+    }
+
+    private toStats(stat) : Stats {
+        return new RemoteNodeStat(stat)
     }
 
     private connect() : Thenable<any> {
@@ -63,7 +68,7 @@ export class RemoteModel {
                         let type: string = 'directory'
                         if (d.attrs.isFile())
                             type = 'file'
-                        nodeList.push(new RemoteNode(path, d['filename'], type))
+                        nodeList.push(new RemoteNode(path, d['filename'], type, this.toStats(d.attrs)))
                     }
                     nodeList.sort((a: RemoteNode, b: RemoteNode) => {
                         if (a.isDirectory == b.isDirectory) {
@@ -128,9 +133,34 @@ export class RemoteModel {
         })
     }
 
-    public setContent(filePath: string, data: Buffer, callback) : void {
-        this.connect().then(() => this.loadSFTP()).then(sftp => {
-            sftp.writeFile(filePath, data, callback)
+    public setContent(filePath: string, data: Buffer) : Thenable<void> {
+        return new Promise((c, e) => {
+            this.connect().then(() => this.loadSFTP()).then(sftp => {
+                sftp.writeFile(filePath, data, err => {
+                    if (err) {
+                        e(err)
+                    } else {
+                        c()
+                    }
+                })
+            })
+        })
+        
+    }
+
+    public getStats(filePath: string) : Thenable<Stats> {
+        return this.connect().then(() => this.loadSFTP()).then(sftp => {
+            return new Promise((c, e) => {
+                sftp.stat(filePath, (err, stat) => {
+                    if (err) {
+                        e(err)
+                        this._conn = null
+                        this._sftp = null
+                    } else {
+                        c(new RemoteNodeStat(stat))
+                    }
+                })
+            })
         })
     }
 }

@@ -7,9 +7,12 @@ export function flushDocument(fileMapping: FileMapping, remoteModel: RemoteModel
     let remotePath = fileMapping.getReverseLink(fileMapping.getRelativePath(doc.uri.fsPath))
     if (!remotePath)
         return
-    remoteModel.getContent(remotePath).then((content) => {
+    remoteModel.getStats(remotePath)
+    .then(stats => fileMapping.setFileMTime(remotePath, stats.mtime.getTime()))
+    .then(() => remoteModel.getContent(remotePath))
+    .then((content) => {
         let localPath = doc.uri.fsPath
         fs.writeFileSync(localPath, content)
-        vscode.window.showInformationMessage('sync remote file "' + remotePath + '" success.');
+        vscode.window.showInformationMessage('sync remote file "' + remotePath + '" success.')
     })
 }
